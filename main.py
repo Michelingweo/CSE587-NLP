@@ -43,7 +43,7 @@ def test(net_g, data_loader,type='Test'):
 
             log_probs = net_g(text[0].to(args.device), text[1].to(args.device), text[2].to(args.device))
 
-        elif model_sign == 'fedmvp':
+        elif model_sign == 'mvp':
 
             log_probs, batch_representation = net_g(
                 image.to(args.device), 
@@ -51,11 +51,8 @@ def test(net_g, data_loader,type='Test'):
                 text[1].to(args.device), 
                 text[2].to(args.device)
                 )
-        elif model_sign == 'mmfed':
-           
-            image, text = image.to(args.device), text[0].to(args.device)
-            log_probs = net_g(image, text)
-            
+        elif model_sign == 'vit':
+            log_probs = net_g(img.to(args.device)) 
         else:
             log_probs = net_g(text)
         # print(f'log_probs:{log_probs.shape}')
@@ -80,18 +77,16 @@ def test(net_g, data_loader,type='Test'):
 
 
 torch.manual_seed(5481)
-dataset = 'cub'
-model_sign = 'fedmvp' #gru, bert, bert_seq, fedmvp, mmfed
-lr = 2e-4
-epochs = 700
+dataset = args.dataset
+model_sign = args.model #gru, bert, mvp, vit
+lr = args.lr
+epochs = args.epochs
 
 
 print(f'dataset:{dataset}')
 print(f'model:{model_sign}')
 print(f'learning rate:{lr}')
 print(f'epochs:{epochs}')
-
-
 
 
 vocab_size = 30522# size of the vocabulary used for tokenization
@@ -114,22 +109,6 @@ elif dataset == 'cub':
     # 2933 test images
     test_set, test_loader = get_cub_200_2011(split='test', d_batch=args.bs)
     
-    
-    # total_set = ConcatDataset([train_set_, test_set_])
-
-
-    # total_loader = DataLoader(total_set, batch_size=args.local_bs, shuffle=True, num_workers=2,
-    #                                   pin_memory=True)
-
-    # train_set, test_set = random_split(total_set, [0.9, 0.1])
-    # train_loader = DataLoader(train_set, batch_size=args.local_bs, shuffle=True, num_workers=2,
-    #              pin_memory=True)
-
-    # test_loader = DataLoader(test_set, batch_size=args.local_bs, shuffle=True, num_workers=2,
-    #              pin_memory=True)
-   
-    # ==============================================
-    # print(f'{len(total_loader)} == {len(total_set)}')
     num_class = 200
 
 
@@ -150,20 +129,18 @@ print(f'test set size:{len(test_set)}')
 
 
 
-if model_sign == 'fedmvp':
-    model = FedMVP(args=args, loss_type='all').to(args.device)
+if model_sign == 'mvp':
+    model = MVP(args=args, loss_type='all').to(args.device)
 elif model_sign == 'bert':
-    model = FedBERT(args=args).to(args.device)
+    model = BERT(args=args).to(args.device)
 elif model_sign == 'resnet50':
     model = timm.create_model('cspresnet50', pretrained=True, num_classes=num_class)
-elif model_sign == 'fedvit':
-    model = FedViT(args=args, image_size=224).to(args.device)
+elif model_sign == 'vit':
+    model = ViT(args=args, image_size=224).to(args.device)
 elif model_sign == 'joint_encoder':
     model = central_jointencoder(args)
-elif model_sign == 'mmfed':
-    model = MMFed(embed_dim=256, num_heads=4, num_classes=num_class, num_layers=2, image_dim=256, text_dim=256)
 else:
-    model = Fedclip(num_classes=num_class)
+    print('can not identify the model type')
 
 
 # optimizer = optim.SGD(model.parameters(), lr=args.lr*10, momentum=args.momentum)
@@ -212,7 +189,7 @@ for epoch in range(epochs):
             scaler.step(optimizer)
             scaler.update()
 
-        elif model_sign == 'fedmvp':
+        elif model_sign == 'mvp':
             optimizer.zero_grad()
             with autocast():
                 output, batch_representation = model(
@@ -227,11 +204,11 @@ for epoch in range(epochs):
             scaler.step(optimizer)
             scaler.update()
         
-        elif model_sign == 'mmfed':
+        elif model_sign == 'vit':
             
             optimizer.zero_grad()
             with autocast():
-                output = model(image.to(args.device), text[0].to(args.device))
+                output = model(image.to(args.device))
                 loss = F.cross_entropy(output, target_oh)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
@@ -277,7 +254,7 @@ plt.figure()
 plt.plot(range(len(list_loss)), list_loss)
 plt.xlabel('epochs')
 plt.ylabel('train loss')
-plt.savefig('./save/{}_{}_{}_{}missing.png'.format(args.model, args.dataset, args.epochs, args.missing_ratio))
+plt.savefig('./save/{}_{}_{}.png'.format(args.model, args.dataset, args.epochs))
 
 # testing
 
@@ -288,7 +265,7 @@ train_acc, train_loss = test(model, train_loader, type='Train')
 print(f'Train Acc:{train_acc}. Train Loss:{train_loss}')
 print(f'Test Acc:{test_acc}. Test Loss:{test_loss}')
 
-torch.save(model.state_dict(), './save/trained_model/central_{}_{}'.format(model_sign, args.dataset))
+torch.save(model.state_dict(), './save/trained_model/{}_{}'.format(model_sign, args.dataset))
 
 
 
