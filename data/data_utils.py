@@ -50,7 +50,6 @@ class CUB_200_2011(Dataset):
         super().__init__()
 
         assert split in ('all', 'train_val', 'test')
-        assert d_image_size in (64, 128, 256)
         if should_pad:
             assert pad_to_length >= 3 # <START> foo <END> need at least length 3.
 
@@ -91,19 +90,14 @@ class CUB_200_2011(Dataset):
         self.tokenizer = nlp.tokenizer # Create a Tokenizer with the default settings for English including punctuation rules and exceptions
 
         # images
-        self.img_missing_ids = []
-        self.text_missing_ids = []
         if split == 'all':
             self.img_ids = metadata['img_ids']
             imgs_path = CUB_200_2011_IMGS_256_PATH
         elif split == 'train_val':
             self.img_ids = metadata['train_val_img_ids']
-            # print(f'trainset length===={len(self.img_ids)}')
-
             imgs_path = CUB_200_2011_TRAIN_VAL_IMGS_256_PATH
         else:
             self.img_ids = metadata['test_img_ids']
-            # print(f'testset length===={len(self.img_ids)}')
             imgs_path = CUB_200_2011_TEST_IMGS_256_PATH
 
         self.imgs = torch.load(imgs_path)
@@ -180,7 +174,7 @@ class OxfordFlowers102(Dataset):
         super().__init__()
 
         assert split in ('all', 'train_val', 'test')
-        assert d_image_size in (64, 128, 256)
+        
         if should_pad:
             assert pad_to_length >= 3 # <START> foo <END> need at least length 3.
 
@@ -221,58 +215,19 @@ class OxfordFlowers102(Dataset):
         self.tokenizer = nlp.tokenizer # Create a Tokenizer with the default settings for English including punctuation rules and exceptions
 
         # images
-        self.img_missing_ids = []
-        self.text_missing_ids = []
         if split == 'all':
             self.img_ids = metadata['img_ids']
-            if d_image_size == 64:
-                imgs_path = OXFORD_FLOWERS_102_IMGS_64_PATH
-            elif d_image_size == 128:
-                imgs_path = OXFORD_FLOWERS_102_IMGS_128_PATH
-            else:
-                imgs_path = OXFORD_FLOWERS_102_IMGS_256_PATH
+            imgs_path = OXFORD_FLOWERS_102_IMGS_256_PATH
         elif split == 'train_val':
             self.img_ids = metadata['train_val_img_ids']
-            
-            #modality missing
-            if args.missing_ratio > 0:
-                
-                print(f'===={100 * args.missing_ratio}% data missed=====')
-
-                
-                missing_num = int(args.missing_ratio * len(self.img_ids))
-                img_missing_num = int(args.img_missing_ratio * missing_num)
-                text_missing_num = missing_num - img_missing_num
-                
-                self.img_missing_ids = random.sample(self.img_ids, img_missing_num)
-                remaining_ids = [n for n in self.img_ids if n not in self.img_missing_ids]
-                self.text_missing_ids = random.sample(remaining_ids, text_missing_num)
-            
-            
-            if d_image_size == 64:
-                imgs_path = OXFORD_FLOWERS_102_TRAIN_VAL_IMGS_64_PATH
-            elif d_image_size == 128:
-                imgs_path = OXFORD_FLOWERS_102_TRAIN_VAL_IMGS_128_PATH
-            else:
-                imgs_path = OXFORD_FLOWERS_102_TRAIN_VAL_IMGS_256_PATH
+            imgs_path = OXFORD_FLOWERS_102_TRAIN_VAL_IMGS_256_PATH
         else:
             self.img_ids = metadata['test_img_ids']
-            if d_image_size == 64:
-                imgs_path = OXFORD_FLOWERS_102_TEST_IMGS_64_PATH
-            elif d_image_size == 128:
-                imgs_path = OXFORD_FLOWERS_102_TEST_IMGS_128_PATH
-            else:
-                imgs_path = OXFORD_FLOWERS_102_TEST_IMGS_256_PATH
+            imgs_path = OXFORD_FLOWERS_102_TEST_IMGS_256_PATH
 
         self.imgs = torch.load(imgs_path)
         
-        if args.missing_ratio > 0:
-            self.generated_imgs = torch.load(OXFORD_FLOWERS_102_GENERATED_IMGS_PATH)
-            self.generated_txts = torch.load(OXFORD_FLOWERS_102_GENERATED_TXTS_PATH)
-            self.generated_bertencode = self.generated_txts['img_id_to_bertencode']
-            self.generated_bertmask = self.generated_txts['img_id_to_bertmask']
-            self.generated_berttokenid = self.generated_txts['img_id_to_berttokenid']
-        # assert self.imgs.size()[1:] == (3, d_image_size, d_image_size) and self.imgs.dtype == torch.uint8
+        
 
     def encode_caption(self, cap):
         words = [token.text for token in self.tokenizer(cap)]
@@ -308,13 +263,7 @@ class OxfordFlowers102(Dataset):
     def __getitem__(self, idx):
 
         img_id = self.img_ids[idx]
-        
-        
-        
-        if self.img_missing_ids and args.model == 'fedmvp' and img_id in self.img_missing_ids:
-            img = self.generated_imgs[img_id]
-        else:
-            img = self.imgs[img_id]
+        img = self.imgs[img_id]
             
         if self.transform:
             img = self.transform(img)
@@ -322,25 +271,16 @@ class OxfordFlowers102(Dataset):
         
         encoded_caps = self.img_id_to_encoded_caps[img_id]
         
-        if self.text_missing_ids and args.model == 'fedmvp' and img_id in self.text_missing_ids:
-            bertencode_cap = self.generated_bertencode[img_id]
-            bertmask = self.generated_bertmask[img_id]
-            berttokenid = self.generated_berttokenid[img_id]
-            # print(f'bertencode:{bertencode_caps.shape}')
-            # print(f'bertmasks:{bertmasks.shape}')
-            # print(f'berttokenids:{berttokenids.shape}')
-            
-        else:
-            bertencode_caps = self.img_id_to_bertencode[img_id]
-            bertmasks = self.img_id_to_bertmask[img_id]
-            berttokenids = self.img_id_to_bertrokenid[img_id]
+        bertencode_caps = self.img_id_to_bertencode[img_id]
+        bertmasks = self.img_id_to_bertmask[img_id]
+        berttokenids = self.img_id_to_bertrokenid[img_id]
 
-            cap_idx = torch.randint(low=0, high=self.num_captions_per_image, size=(1,)).item()
+        cap_idx = torch.randint(low=0, high=self.num_captions_per_image, size=(1,)).item()
 
-            encoded_cap = encoded_caps[cap_idx]
-            bertencode_cap = bertencode_caps[cap_idx]
-            bertmask = bertmasks[cap_idx]
-            berttokenid = berttokenids[cap_idx]
+        encoded_cap = encoded_caps[cap_idx]
+        bertencode_cap = bertencode_caps[cap_idx]
+        bertmask = bertmasks[cap_idx]
+        berttokenid = berttokenids[cap_idx]
 
         if self.text_return_type == 'encode':
             if self.should_pad:
@@ -361,7 +301,7 @@ data_transforms = {
             'train': transforms.Compose([
 
                 transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),  # 均值，方差
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]), 
             ]),
             'valid': transforms.Compose([
                 transforms.Resize(256),
@@ -387,11 +327,11 @@ def get_cub_200_2011(split='test',args=args,d_batch=4, should_pad=True, shuffle=
     else:
         d_batch = args.local_bs
         transform = transforms.Compose([
-            transforms.RandomRotation(45),  # 随机旋转，-45到45度
-            transforms.CenterCrop(224),  # 从中心开始裁剪，将其剪为224
-            transforms.RandomHorizontalFlip(p=0.5),  # 有p的概率随机水平反转
-            transforms.RandomVerticalFlip(p=0.5),  # 垂直反转
-            transforms.ColorJitter(brightness=0.2, contrast=0.1, saturation=0.1, hue=0.1),  ##亮度，对比度，饱和度，色相
+            transforms.RandomRotation(45),  
+            transforms.CenterCrop(224),  
+            transforms.RandomHorizontalFlip(p=0.5), 
+            transforms.RandomVerticalFlip(p=0.5),  
+            transforms.ColorJitter(brightness=0.2, contrast=0.1, saturation=0.1, hue=0.1), 
             transforms.RandomGrayscale(p=0.025),  
             transforms.Lambda(lambda x: (x.float() / 255.) * 2. - 1.),
             # transforms.CenterCrop(224),
