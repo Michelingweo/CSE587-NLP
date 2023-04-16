@@ -22,19 +22,19 @@ DATASETS_PATH = '/data/'
 # CUB_200_2011
 CUB_200_2011_PATH = os.path.join(DATASETS_PATH, 'cub')
 #metadata
-CUB_200_2011_METADATA_PATH           = os.path.join(CUB_200_2011_PATH, 'Metadata.pth')
+CUB_200_2011_METADATA_PATH           = os.path.join(CUB_200_2011_PATH, 'cub_metadata.pth')
 # All images
-CUB_200_2011_IMGS_256_PATH           = os.path.join(CUB_200_2011_PATH, 'imgs_256x256.pth')
+CUB_200_2011_IMGS_256_PATH           = os.path.join(CUB_200_2011_PATH, 'cub_imgs_256x256.pth')
 # Training/Validation split images
-CUB_200_2011_TRAIN_VAL_IMGS_256_PATH = os.path.join(CUB_200_2011_PATH, 'imgs_train_256x256.pth')
+CUB_200_2011_TRAIN_VAL_IMGS_256_PATH = os.path.join(CUB_200_2011_PATH, 'cub_imgs_train_256x256.pth')
 # Testing split images
-CUB_200_2011_TEST_IMGS_256_PATH      = os.path.join(CUB_200_2011_PATH, 'imgs_test_256x256.pth')
+CUB_200_2011_TEST_IMGS_256_PATH      = os.path.join(CUB_200_2011_PATH, 'cub_imgs_test_256x256.pth')
 
 
 # OXFORD_FLOWERS_102
-OXFORD_FLOWERS_102_PATH = os.path.join(DATASETS_PATH, 'flower_data')
+OXFORD_FLOWERS_102_PATH = os.path.join(DATASETS_PATH, 'flower')
 # metadata
-OXFORD_FLOWERS_102_METADATA_PATH           = os.path.join(OXFORD_FLOWERS_102_PATH, 'metadata.pth')
+OXFORD_FLOWERS_102_METADATA_PATH           = os.path.join(OXFORD_FLOWERS_102_PATH, 'flower_metadata.pth')
 # All images
 OXFORD_FLOWERS_102_IMGS_256_PATH           = os.path.join(OXFORD_FLOWERS_102_PATH, 'flower_imgs_ALL_256x256.pth')
 # Training/Validation split images

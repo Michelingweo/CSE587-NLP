@@ -18,7 +18,7 @@ import torch.nn.functional as F
 
 import transformers
 import matplotlib.pyplot as plt
-from data.data_utils import to_one_hot, get_oxford_flowers_102, get_cub_200_2011
+from data_utils import to_one_hot, get_oxford_flowers_102, get_cub_200_2011
 from PIL import Image
 from torch.cuda.amp import autocast, GradScaler
 
