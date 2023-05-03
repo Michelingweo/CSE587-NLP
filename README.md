@@ -1,5 +1,5 @@
 # CSE587-NLP
-Pre-trained Knowledge Distillation Learning for Fine-grained Categorization
+Contrastive Knowledge Transferring from Pre-trained Model
 
 This project contains the below files:
 
