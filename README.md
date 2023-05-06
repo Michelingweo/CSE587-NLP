@@ -16,4 +16,10 @@ This project contains the below files:
 >transformer_networks.py --- the components help to build our own model
 
 Requirement:
+
 `pip install -r requirement.txt`
+
+Run the experiment:
+
+`python main.py`
+
