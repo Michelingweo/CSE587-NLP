@@ -17,8 +17,9 @@ This project contains the below files:
 
 Datasets Download:
 
-Visit the [GitHub Help](https://help.github.com/) page for more information.
+CUB 200 dataset: [https://www.vision.caltech.edu/datasets/cub_200_2011/](https://www.vision.caltech.edu/datasets/cub_200_2011/)
 
+Oxford Flower 102 dataset: [https://www.robots.ox.ac.uk/~vgg/data/flowers/102/](https://www.robots.ox.ac.uk/~vgg/data/flowers/102/)
 
 
 Requirement:
